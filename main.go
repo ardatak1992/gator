@@ -12,7 +12,14 @@ func main() {
 		fmt.Println(err)
 	}
 
-	fmt.Println("fawgag")
-	fmt.Println(conf)
-	
+	conf.SetUser("arda")
+
+	conf, err = config.Read()
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Println(conf.DbUrl)
+	fmt.Println(conf.CurrentUserName)
+
 }
