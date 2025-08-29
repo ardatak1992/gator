@@ -62,3 +62,31 @@ func handlerRegister(s *state, cmd command) error {
 
 	return nil
 }
+
+func handlerGetAllUsers(s *state, cmd command) error {
+	users, err := s.db.GetAllUsers(context.Background())
+	if err != nil {
+		return fmt.Errorf("couldn't get the users %v", err)
+	}
+
+	if len(users) == 0 {
+		fmt.Println("There's no users in database")
+		return nil
+	}
+
+	for _, user := range users {
+		current := ""
+		if user.Name == s.cfg.CurrentUserName {
+			current = "(current)"
+		}
+
+		fmt.Printf("* %s %s\n", user.Name, current)
+	}
+
+	return nil
+}
+
+func handlerDeleteUserTable(s *state, cmd command) error {
+	s.db.DeleteAllUsers(context.Background())
+	return nil
+}

@@ -12,7 +12,7 @@ import (
 )
 
 type state struct {
-	db *database.Queries
+	db  *database.Queries
 	cfg *config.Config
 }
 
@@ -32,7 +32,7 @@ func main() {
 
 	currentState := &state{
 		cfg: &conf,
-		db: dbQueries,
+		db:  dbQueries,
 	}
 
 	cmds := commands{
@@ -41,6 +41,11 @@ func main() {
 
 	cmds.register("login", handlerLogin)
 	cmds.register("register", handlerRegister)
+	cmds.register("reset", handlerDeleteUserTable)
+	cmds.register("users", handlerGetAllUsers)
+	cmds.register("agg", handlerAgg)
+	cmds.register("addfeed", handlerAddFeed)
+	cmds.register("feeds", handlerFeeds)
 
 	if len(os.Args) < 2 {
 		log.Fatal("argument not found")
