@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/xml"
 	"fmt"
 	"html"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/ardatak1992/gator/internal/database"
+	"github.com/google/uuid"
 )
 
 type RSSFeed struct {
@@ -45,9 +47,29 @@ func scrapeFeeds(s *state) error {
 
 	fmt.Printf("%s\n\n", rssFeed.Channel.Title)
 	for _, item := range rssFeed.Channel.Item {
-		fmt.Println(item.Title)
+
+		t, err := time.Parse(time.RFC1123Z, item.PubDate) // pick the right layout
+		var pub sql.NullTime
+		if err == nil {
+			pub = sql.NullTime{Valid: true, Time: t}
+		} else {
+			pub = sql.NullTime{Valid: false}
+		}
+
+		s.db.CreatePost(
+			context.Background(),
+			database.CreatePostParams{
+				ID:          uuid.New(),
+				CreatedAt:   time.Now().UTC(),
+				UpdatedAt:   time.Now().UTC(),
+				Title:       item.Title,
+				Url:         item.Link,
+				Description: sql.NullString{Valid: true, String: item.Description},
+				PublishedAt: pub,
+				FeedID:      nextFeed.ID,
+			})
 	}
-	fmt.Println()
+
 	return nil
 }
 
