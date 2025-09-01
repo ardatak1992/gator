@@ -7,6 +7,9 @@ import (
 	"html"
 	"io"
 	"net/http"
+	"time"
+
+	"github.com/ardatak1992/gator/internal/database"
 )
 
 type RSSFeed struct {
@@ -23,6 +26,29 @@ type RSSItem struct {
 	Link        string `xml:"link"`
 	Description string `xml:"description"`
 	PubDate     string `xml:"pubDate"`
+}
+
+func scrapeFeeds(s *state) error {
+	nextFeed, err := s.db.GetNextFeedToFetch(context.Background())
+	if err != nil {
+		return fmt.Errorf("can't get next feed to fetch")
+	}
+	rssFeed, err := fetchFeed(context.Background(), nextFeed.Url)
+	if err != nil {
+		return fmt.Errorf("error fetching feed %v", err)
+	}
+
+	err = s.db.MarkFeedFetched(context.Background(), database.MarkFeedFetchedParams{ID: nextFeed.ID, UpdatedAt: time.Now().UTC()})
+	if err != nil {
+		return fmt.Errorf("can't mark as fetched")
+	}
+
+	fmt.Printf("%s\n\n", rssFeed.Channel.Title)
+	for _, item := range rssFeed.Channel.Item {
+		fmt.Println(item.Title)
+	}
+	fmt.Println()
+	return nil
 }
 
 func fetchFeed(ctx context.Context, feedUrl string) (*RSSFeed, error) {
@@ -42,6 +68,10 @@ func fetchFeed(ctx context.Context, feedUrl string) (*RSSFeed, error) {
 	}
 
 	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("bad status: %s", res.Status)
+	}
 
 	data, err := io.ReadAll(res.Body)
 	if err != nil {
@@ -63,5 +93,3 @@ func fetchFeed(ctx context.Context, feedUrl string) (*RSSFeed, error) {
 
 	return &rssFeed, nil
 }
-
-

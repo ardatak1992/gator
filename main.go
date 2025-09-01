@@ -44,10 +44,11 @@ func main() {
 	cmds.register("reset", handlerDeleteUserTable)
 	cmds.register("users", handlerGetAllUsers)
 	cmds.register("agg", handlerAgg)
-	cmds.register("addfeed", handlerAddFeed)
+	cmds.register("addfeed", middlewareLoggedIn(handlerAddFeed))
 	cmds.register("feeds", handlerFeeds)
-	cmds.register("follow", handlerFeedFollow)
-	cmds.register("following", handlerFeedFollowing)
+	cmds.register("follow", middlewareLoggedIn(handlerFeedFollow))
+	cmds.register("following", middlewareLoggedIn(handlerFeedFollowing))
+	cmds.register("unfollow", middlewareLoggedIn(handlerFeedUnfollow))
 
 	if len(os.Args) < 2 {
 		log.Fatal("argument not found")

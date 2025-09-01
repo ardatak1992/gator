@@ -9,24 +9,37 @@ import (
 	"github.com/google/uuid"
 )
 
-func handlerAddFeed(s *state, cmd command) error {
+func handlerAddFeed(s *state, cmd command, user database.User) error {
 	if len(cmd.arguments) != 2 {
 		return fmt.Errorf("usage: addFeed <name> <url>")
 	}
 
 	name := cmd.arguments[0]
 	url := cmd.arguments[1]
-	currentUser, _ := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
+
 	feed, err := s.db.CreateFeed(context.Background(), database.CreateFeedParams{
 		ID:        uuid.New(),
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
 		Name:      name,
 		Url:       url,
-		UserID:    currentUser.ID,
+		UserID:    user.ID,
 	})
 	if err != nil {
 		return err
+	}
+
+	_, err = s.db.CreateFeedFollow(
+		context.Background(),
+		database.CreateFeedFollowParams{
+			ID:        uuid.New(),
+			CreatedAt: time.Now().UTC(),
+			UpdatedAt: time.Now().UTC(),
+			UserID:    user.ID,
+			FeedID:    feed.ID,
+		})
+	if err != nil {
+		return fmt.Errorf("error while inserting feed follow %v", err)
 	}
 
 	fmt.Println("Added feed")
@@ -55,7 +68,7 @@ func handlerFeeds(s *state, cmd command) error {
 	return nil
 }
 
-func handlerFeedFollow(s *state, cmd command) error {
+func handlerFeedFollow(s *state, cmd command, user database.User) error {
 	if len(cmd.arguments) != 1 {
 		return fmt.Errorf("usage: follow <url>")
 	}
@@ -65,10 +78,6 @@ func handlerFeedFollow(s *state, cmd command) error {
 	if err != nil {
 		return fmt.Errorf("couldn't find the feed %v", err)
 	}
-	currentUser, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
-	if err != nil {
-		return fmt.Errorf("couldn't find the user %v", err)
-	}
 
 	feedFollowRow, err := s.db.CreateFeedFollow(
 		context.Background(),
@@ -76,7 +85,7 @@ func handlerFeedFollow(s *state, cmd command) error {
 			ID:        uuid.New(),
 			CreatedAt: time.Now().UTC(),
 			UpdatedAt: time.Now().UTC(),
-			UserID:    currentUser.ID,
+			UserID:    user.ID,
 			FeedID:    followedFeed.ID,
 		},
 	)
@@ -89,14 +98,25 @@ func handlerFeedFollow(s *state, cmd command) error {
 	return nil
 }
 
-func handlerFeedFollowing(s *state, cmd command) error {
+func handlerFeedUnfollow(s *state, cmd command, user database.User) error {
 
-	currentUser, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
-	if err != nil {
-		return fmt.Errorf("couldn't find the user %v", err)
+	if len(cmd.arguments) != 1 {
+		return fmt.Errorf("usage: unfollow <url>")
 	}
 
-	feeds, err := s.db.GetFeedFollowsForUser(context.Background(), currentUser.ID)
+	url := cmd.arguments[0]
+
+	err := s.db.UnfollowFeed(context.Background(), database.UnfollowFeedParams{UserID: user.ID, Url: url})
+	if err != nil {
+		return fmt.Errorf("cannot unfollow feed");
+	}
+
+	return nil
+}
+
+func handlerFeedFollowing(s *state, cmd command, user database.User) error {
+
+	feeds, err := s.db.GetFeedFollowsForUser(context.Background(), user.ID)
 	if err != nil {
 		return fmt.Errorf("couldn't get the feeds %v", err)
 	}
