@@ -12,7 +12,7 @@ import (
 
 func handlerLogin(s *state, cmd command) error {
 	if len(cmd.arguments) == 0 {
-		return fmt.Errorf("no argument found")
+		return fmt.Errorf("usage: login <username>")
 	}
 	name := cmd.arguments[0]
 
@@ -33,7 +33,7 @@ func handlerLogin(s *state, cmd command) error {
 
 func handlerRegister(s *state, cmd command) error {
 	if len(cmd.arguments) == 0 {
-		return fmt.Errorf("no argument found")
+		return fmt.Errorf("usage: login <username>")
 	}
 
 	userName := cmd.arguments[0]
