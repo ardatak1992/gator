@@ -9,24 +9,19 @@ import (
 	"github.com/google/uuid"
 )
 
-func handlerFollow(s *state, cmd command) error {
+func handlerFollow(s *state, cmd command, currentUser database.User) error {
 	if len(cmd.args) == 0 {
 		return fmt.Errorf("usage: follow <url>")
 	}
 
 	url := cmd.args[0]
 
-	currentUser, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
-	if err != nil {
-		return err
-	}
-
 	feed, err := s.db.GetFeedByUrl(context.Background(), url)
 	if err != nil {
 		return err
 	}
 
-	data, err := s.db.CreateFeedFollow(
+	feedFollow, err := s.db.CreateFeedFollow(
 		context.Background(),
 		database.CreateFeedFollowParams{
 			ID:        uuid.New(),
@@ -36,6 +31,11 @@ func handlerFollow(s *state, cmd command) error {
 			FeedID:    feed.ID,
 		},
 	)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("%s is now following: %s\n", feedFollow.UserName, feedFollow.FeedName)
 
 	return nil
 }

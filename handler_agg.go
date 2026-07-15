@@ -1,23 +1,23 @@
 package main
 
 import (
-	"context"
 	"fmt"
+	"time"
 )
 
 func handlerAgg(s *state, cmd command) error {
-	// if len(cmd.args) == 0 {
-	// 	return fmt.Errorf("usage: agg <url>")
-	// }
+	if len(cmd.args) == 0 {
+		return fmt.Errorf("usage: agg <time_between_requests>")
+	}
 
-	// url := cmd.args[0]
-
-	feed, err := fetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
+	timeBetweenRequests, err := time.ParseDuration(cmd.args[0])
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("%v\n", feed)
+	ticker := time.NewTicker(timeBetweenRequests)
+	for ; ; <-ticker.C {
+		scrapeFeeds(s)
+	}
 
-	return nil
 }

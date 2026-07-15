@@ -22,3 +22,15 @@ SELECT * FROM feeds;
 -- name: GetFeedByUrl :one
 SELECT * FROM feeds
 WHERE url = $1;
+
+
+-- name: GetNextFeedToFetch :one
+SELECT * FROM feeds
+ORDER BY last_fetched_at ASC NULLS FIRST
+LIMIT 1;
+
+
+-- name: MarkAsFetched :exec
+UPDATE feeds
+SET last_fetched_at = $1
+WHERE id = $2;

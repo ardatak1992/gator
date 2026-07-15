@@ -37,3 +37,5 @@ func (c *commands) register(name string, f func(*state, command) error) error {
 	c.cmds[name] = f
 	return nil
 }
+
+
