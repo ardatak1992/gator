@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ardatak1992/gator/internal/database"
+	"github.com/google/uuid"
 )
 
 func scrapeFeeds(s *state) error {
@@ -14,6 +15,7 @@ func scrapeFeeds(s *state) error {
 	if err != nil {
 		return err
 	}
+
 	err = s.db.MarkAsFetched(
 		context.Background(),
 		database.MarkAsFetchedParams{
@@ -30,9 +32,32 @@ func scrapeFeeds(s *state) error {
 		return err
 	}
 
-	fmt.Printf("\033[31m* %s\033[0m\n", rssFeed.Channel.Title)
+	layout := "Mon, 02 Jan 2006 15:04:05 -0700"
+
 	for _, feedItem := range rssFeed.Channel.Item {
-		fmt.Printf("\t-%s\n", feedItem.Title)
+
+		parsedTime, err := time.Parse(layout, feedItem.PubDate)
+		if err != nil {
+			return err
+		}
+
+		post, err := s.db.CreatePost(
+			context.Background(),
+			database.CreatePostParams{
+				ID:          uuid.New(),
+				CreatedAt:   time.Now().UTC(),
+				UpdatedAt:   time.Now().UTC(),
+				Title:       feedItem.Title,
+				Url:         feedItem.Link,
+				Description: sql.NullString{String: feedItem.Description},
+				PublishedAt: parsedTime,
+			},
+		)
+
+		if err == nil {
+			fmt.Printf("\"%s\" added to database\n", post.Title)
+		}
+
 	}
 
 	return nil
